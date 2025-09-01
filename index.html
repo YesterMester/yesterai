@@ -426,8 +426,9 @@
                             id="messageInput" 
                             placeholder="Ask for code, explanations, or anything else..."
                             onkeypress="handleKeyPress(event)"
+                            autocomplete="off"
                         >
-                        <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+                        <button class="send-btn" onclick="sendMessage()" id="sendBtn" type="button">
                             Send 🚀
                         </button>
                     </div>
@@ -453,18 +454,37 @@
             }
         }
 
-        // Initialize when page loads
-        window.addEventListener('load', initPuter);
-
-        // Model selection
-        document.querySelectorAll('.model-option[data-model]').forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelectorAll('.model-option').forEach(opt => opt.classList.remove('active'));
-                option.classList.add('active');
-                currentModel = option.dataset.model;
-                addMessage('ai', `Switched to ${option.querySelector('.model-name').textContent}! How can I help you?`);
-            });
+        // Initialize when page loads - Fixed initialization
+        window.addEventListener('load', () => {
+            initPuter();
+            initializeModelSelection();
+            
+            // Make sure the input is ready
+            const input = document.getElementById('messageInput');
+            if (input) {
+                input.focus();
+                console.log('Message input ready');
+            }
+            
+            // Test send button
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                console.log('Send button ready');
+            }
         });
+
+        // Model selection - Fixed to work after page load
+        function initializeModelSelection() {
+            document.querySelectorAll('.model-option[data-model]').forEach(option => {
+                option.addEventListener('click', () => {
+                    // Remove active from all model options
+                    document.querySelectorAll('.model-option[data-model]').forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    currentModel = option.dataset.model;
+                    addMessage('ai', `Switched to ${option.querySelector('.model-name').textContent}! How can I help you?`);
+                });
+            });
+        }
 
         function setPrompt(prompt) {
             document.getElementById('messageInput').value = prompt;
@@ -472,16 +492,24 @@
         }
 
         function handleKeyPress(event) {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent form submission or new line
                 sendMessage();
             }
         }
 
         async function sendMessage() {
+            console.log('Send message called'); // Debug log
+            
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
             
-            if (!message || isLoading) return;
+            console.log('Message:', message, 'Loading:', isLoading); // Debug log
+            
+            if (!message || isLoading) {
+                console.log('Message empty or loading, returning');
+                return;
+            }
 
             // Add user message
             addMessage('user', message);
@@ -506,6 +534,7 @@
                     });
                 } else {
                     // Simulate AI response for demo
+                    console.log('Using simulated response for model:', currentModel);
                     response = await simulateAIResponse(message, currentModel);
                 }
 
@@ -516,12 +545,14 @@
                 addMessage('ai', response);
                 
             } catch (error) {
+                console.error('Error in sendMessage:', error);
                 removeMessage(loadingId);
                 addMessage('ai', `Error: ${error.message}`, true);
             } finally {
                 isLoading = false;
                 sendBtn.disabled = false;
                 sendBtn.textContent = 'Send 🚀';
+                input.focus(); // Return focus to input
             }
         }
 
@@ -560,4 +591,55 @@
         function removeMessage(messageId) {
             const message = document.getElementById(messageId);
             if (message) {
-          
+                message.remove();
+            }
+        }
+
+        function formatMessage(content) {
+            // Simple code block detection
+            return content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<div class="code-block"><pre><code>${escapeHtml(code.trim())}</code></pre></div>`;
+            }).replace(/`([^`]+)`/g, '<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #1e293b;">$1</code>');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyCode(codeBlock, button) {
+            const code = codeBlock.querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                }, 2000);
+            });
+        }
+
+        // Simulate AI responses for demo purposes
+        async function simulateAIResponse(message, model) {
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+            
+            const lowerMessage = message.toLowerCase();
+            
+            if (lowerMessage.includes('python') || lowerMessage.includes('function')) {
+                return `Here's a Python function based on your request:\n\n\`\`\`python\ndef example_function(param):\n    """\n    This is an example function generated by ${model}\n    """\n    result = param * 2\n    return result\n\n# Usage example\nprint(example_function(5))  # Output: 10\n\`\`\`\n\nThis function demonstrates basic Python syntax. You can modify it based on your specific needs!`;
+            }
+            
+            if (lowerMessage.includes('react') || lowerMessage.includes('component')) {
+                return `Here's a React component for you:\n\n\`\`\`jsx\nimport React, { useState } from 'react';\n\nconst ExampleComponent = () => {\n  const [count, setCount] = useState(0);\n\n  return (\n    <div>\n      <h2>Counter: {count}</h2>\n      <button onClick={() => setCount(count + 1)}>\n        Increment\n      </button>\n    </div>\n  );\n};\n\nexport default ExampleComponent;\n\`\`\`\n\nThis component uses React hooks and demonstrates state management. Generated by ${model}!`;
+            }
+            
+            if (lowerMessage.includes('html') || lowerMessage.includes('css') || lowerMessage.includes('web')) {
+                return `Here's some HTML and CSS for you:\n\n\`\`\`html\n<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        .container {\n            max-width: 800px;\n            margin: 0 auto;\n            padding: 20px;\n            font-family: Arial, sans-serif;\n        }\n        .highlight {\n            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);\n            color: white;\n            padding: 20px;\n            border-radius: 10px;\n        }\n    </style>\n</head>\n<body>\n    <div class="container">\n        <div class="highlight">\n            <h1>Hello from ${model}!</h1>\n            <p>This is a styled HTML example.</p>\n        </div>\n    </div>\n</body>\n</html>\n\`\`\`\n\nThis creates a responsive, styled webpage with a gradient background!`;
+            }
+            
+            // Default response
+            return `I'm ${model}, and I'm here to help! I can assist you with:\n\n• **Coding** - Python, JavaScript, React, HTML/CSS, and more\n• **Debugging** - Help fix issues in your code\n• **Explanations** - Explain concepts and algorithms\n• **Architecture** - Design patterns and best practices\n\nWhat would you like to work on? Feel free to ask for specific code examples or explanations!`;
+        }
+    </script>
+</body>
+</html>
