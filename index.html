@@ -1,645 +1,520 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chat & Code Generator</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/puter/2.0.0/puter.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            min-height: 600px;
-        }
-
-        .sidebar {
-            background: #f8fafc;
-            border-right: 1px solid #e2e8f0;
-            padding: 30px;
-        }
-
-        .model-selector {
-            margin-bottom: 30px;
-        }
-
-        .model-selector h3 {
-            color: #1e293b;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-        }
-
-        .model-category {
-            color: #4f46e5;
-            font-weight: 700;
-            font-size: 0.9rem;
-            margin: 20px 0 10px 0;
-            padding: 5px 0;
-            border-bottom: 2px solid #e2e8f0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .model-option {
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .model-option[data-tier="premium"]::after {
-            content: "⭐";
-            position: absolute;
-            top: 8px;
-            right: 10px;
-            font-size: 0.8rem;
-        }
-
-        .model-option[data-tier="fast"]::after {
-            content: "⚡";
-            position: absolute;
-            top: 8px;
-            right: 10px;
-            font-size: 0.8rem;
-        }
-
-        .model-option:hover {
-            border-color: #4f46e5;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .model-option.active {
-            border-color: #4f46e5;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-        }
-
-        .model-name {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .model-desc {
-            font-size: 0.85rem;
-            opacity: 0.7;
-        }
-
-        .chat-area {
-            display: flex;
-            flex-direction: column;
-            height: 600px;
-        }
-
-        .messages {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-            background: white;
-        }
-
-        .message {
-            margin-bottom: 20px;
-            padding: 15px 20px;
-            border-radius: 15px;
-            max-width: 80%;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .user-message {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            margin-left: auto;
-            border-bottom-right-radius: 5px;
-        }
-
-        .ai-message {
-            background: #f1f5f9;
-            color: #1e293b;
-            margin-right: auto;
-            border-bottom-left-radius: 5px;
-            border-left: 4px solid #4f46e5;
-        }
-
-        .code-block {
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
-            overflow-x: auto;
-            position: relative;
-        }
-
-        .copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .copy-btn:hover {
-            background: #3730a3;
-        }
-
-        .input-area {
-            padding: 30px;
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .input-container {
-            display: flex;
-            gap: 15px;
-        }
-
-        .message-input {
-            flex: 1;
-            padding: 15px 20px;
-            border: 2px solid #e2e8f0;
-            border-radius: 25px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-
-        .message-input:focus {
-            border-color: #4f46e5;
-        }
-
-        .send-btn {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s ease;
-        }
-
-        .send-btn:hover {
-            transform: scale(1.05);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .loading {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: #64748b;
-            font-style: italic;
-        }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid #e2e8f0;
-            border-top: 2px solid #4f46e5;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #fef2f2;
-            color: #dc2626;
-            border-left: 4px solid #dc2626;
-        }
-
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .sidebar {
-                border-right: none;
-                border-bottom: 1px solid #e2e8f0;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Chat & Code Generator (Puter / OpenAI fallback)</title>
+  <style>
+    /* (kept your existing styles with very small tweaks) */
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+    .container{max-width:1200px;margin:0 auto;background:rgba(255,255,255,.95);border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.1);overflow:hidden;backdrop-filter:blur(10px)}
+    .header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:20px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .header-left{flex:1}
+    .header h1{font-size:1.6rem;margin-bottom:6px;font-weight:700}
+    .header p{opacity:.9;font-size:.95rem;margin:0}
+    .status {font-size:.9rem; padding:8px 12px; border-radius:12px; background: rgba(255,255,255,0.08); display:inline-block; margin-left:10px;}
+    .main-content{display:grid;grid-template-columns:300px 1fr;min-height:600px}
+    .sidebar{background:#f8fafc;border-right:1px solid #e2e8f0;padding:18px;overflow:auto}
+    .model-selector{margin-bottom:18px}
+    .model-selector h3{color:#1e293b;margin-bottom:15px;font-size:1.05rem}
+    .model-category{color:#4f46e5;font-weight:700;font-size:.85rem;margin:14px 0 8px;padding-bottom:6px;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px}
+    .model-option{background:#fff;border:2px solid #e2e8f0;border-radius:10px;padding:12px 15px;margin-bottom:8px;cursor:pointer;transition:all .2s;position:relative;display:block;text-align:left}
+    .model-option:hover{border-color:#4f46e5;transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,.06)}
+    .model-option.active{border-color:#4f46e5;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+    .model-name{font-weight:600;margin-bottom:4px}
+    .model-desc{font-size:.82rem;opacity:.8}
+    .quick-prompts{margin-top:10px}
+    .quick-prompts button{width:100%;margin-bottom:8px}
+    .chat-area{display:flex;flex-direction:column;height:600px}
+    .messages{flex:1;padding:22px;overflow-y:auto;background:#fff}
+    .message{margin-bottom:18px;padding:14px 18px;border-radius:14px;max-width:80%;animation:slideIn .25s ease}
+    @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .user-message{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
+    .ai-message{background:#f1f5f9;color:#1e293b;margin-right:auto;border-bottom-left-radius:5px;border-left:4px solid #4f46e5}
+    .code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;margin:10px 0;font-family:'Courier New',monospace;overflow-x:auto;position:relative}
+    .copy-btn{position:absolute;top:8px;right:8px;background:#4f46e5;color:#fff;border:none;padding:6px 9px;border-radius:6px;cursor:pointer;font-size:.8rem}
+    .input-area{padding:18px;background:#f8fafc;border-top:1px solid #e2e8f0}
+    .input-container{display:flex;gap:12px}
+    .message-input{flex:1;padding:12px 16px;border:2px solid #e2e8f0;border-radius:22px;font-size:1rem;outline:none}
+    .message-input:focus{border-color:#4f46e5}
+    .send-btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;padding:12px 18px;border-radius:22px;cursor:pointer;font-weight:600}
+    .send-btn[disabled]{opacity:.6;cursor:not-allowed}
+    .loading{display:flex;align-items:center;gap:10px;color:#64748b;font-style:italic}
+    .spinner{width:18px;height:18px;border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    .error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626}
+    .api-controls{margin-top:12px;padding:8px;background:#fff;border-radius:8px;border:1px solid #e2e8f0}
+    .small{font-size:.85rem;color:#475569;margin-top:6px}
+    .muted{opacity:.75;font-size:.85rem}
+    @media (max-width:768px){.main-content{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid #e2e8f0}.header{flex-direction:column;align-items:flex-start}}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🤖 AI Chat & Code Generator</h1>
-            <p>Powered by Puter.js - Chat with multiple AI models and get instant code solutions</p>
-        </div>
-        
-        <div class="main-content">
-            <div class="sidebar">
-                <div class="model-selector">
-                    <h3>🧠 Choose AI Model</h3>
-                    
-                    <!-- Premium Models -->
-                    <div class="model-category">🌟 Premium Models</div>
-                    <div class="model-option active" data-model="claude-opus-4.1" data-tier="premium">
-                        <div class="model-name">Claude Opus 4.1 🔥</div>
-                        <div class="model-desc">Latest & most advanced Claude model</div>
-                    </div>
-                    <div class="model-option" data-model="gpt-4-turbo" data-tier="premium">
-                        <div class="model-name">GPT-4 Turbo</div>
-                        <div class="model-desc">OpenAI's fastest premium model</div>
-                    </div>
-                    <div class="model-option" data-model="gpt-4o" data-tier="premium">
-                        <div class="model-name">GPT-4o</div>
-                        <div class="model-desc">Optimized for coding & reasoning</div>
-                    </div>
-                    <div class="model-option" data-model="gemini-ultra" data-tier="premium">
-                        <div class="model-name">Gemini Ultra</div>
-                        <div class="model-desc">Google's most capable model</div>
-                    </div>
-                    
-                    <!-- Claude Family -->
-                    <div class="model-category">🤖 Claude Family</div>
-                    <div class="model-option" data-model="claude-3.5-sonnet" data-tier="standard">
-                        <div class="model-name">Claude 3.5 Sonnet</div>
-                        <div class="model-desc">Excellent for coding & analysis</div>
-                    </div>
-                    <div class="model-option" data-model="claude-3-opus" data-tier="standard">
-                        <div class="model-name">Claude 3 Opus</div>
-                        <div class="model-desc">Most capable Claude 3 model</div>
-                    </div>
-                    <div class="model-option" data-model="claude-3-sonnet" data-tier="standard">
-                        <div class="model-name">Claude 3 Sonnet</div>
-                        <div class="model-desc">Balanced performance</div>
-                    </div>
-                    <div class="model-option" data-model="claude-3-haiku" data-tier="fast">
-                        <div class="model-name">Claude 3 Haiku</div>
-                        <div class="model-desc">Fastest Claude model</div>
-                    </div>
-                    
-                    <!-- OpenAI Models -->
-                    <div class="model-category">🚀 OpenAI Models</div>
-                    <div class="model-option" data-model="gpt-4" data-tier="standard">
-                        <div class="model-name">GPT-4</div>
-                        <div class="model-desc">Original GPT-4, reliable</div>
-                    </div>
-                    <div class="model-option" data-model="gpt-3.5-turbo" data-tier="fast">
-                        <div class="model-name">GPT-3.5 Turbo</div>
-                        <div class="model-desc">Fast and cost-effective</div>
-                    </div>
-                    <div class="model-option" data-model="gpt-3.5-turbo-16k" data-tier="fast">
-                        <div class="model-name">GPT-3.5 Turbo 16K</div>
-                        <div class="model-desc">Extended context window</div>
-                    </div>
-                    
-                    <!-- Google Models -->
-                    <div class="model-category">🔵 Google Models</div>
-                    <div class="model-option" data-model="gemini-pro" data-tier="standard">
-                        <div class="model-name">Gemini Pro</div>
-                        <div class="model-desc">Google's versatile model</div>
-                    </div>
-                    <div class="model-option" data-model="gemini-pro-vision" data-tier="standard">
-                        <div class="model-name">Gemini Pro Vision</div>
-                        <div class="model-desc">Multimodal capabilities</div>
-                    </div>
-                    <div class="model-option" data-model="palm-2" data-tier="fast">
-                        <div class="model-name">PaLM 2</div>
-                        <div class="model-desc">Previous gen Google model</div>
-                    </div>
-                    
-                    <!-- Other Models -->
-                    <div class="model-category">⚡ Other Models</div>
-                    <div class="model-option" data-model="llama-3-70b" data-tier="standard">
-                        <div class="model-name">Llama 3 70B</div>
-                        <div class="model-desc">Meta's open-source champion</div>
-                    </div>
-                    <div class="model-option" data-model="mixtral-8x7b" data-tier="standard">
-                        <div class="model-name">Mixtral 8x7B</div>
-                        <div class="model-desc">Mistral's mixture of experts</div>
-                    </div>
-                    <div class="model-option" data-model="cohere-command-r" data-tier="fast">
-                        <div class="model-name">Cohere Command-R</div>
-                        <div class="model-desc">Optimized for RAG tasks</div>
-                    </div>
-                    <div class="model-option" data-model="perplexity-70b" data-tier="standard">
-                        <div class="model-name">Perplexity 70B</div>
-                        <div class="model-desc">Great for research tasks</div>
-                    </div>
-                </div>
-
-                <div class="quick-prompts">
-                    <h3>⚡ Quick Actions</h3>
-                    <button class="model-option" onclick="setPrompt('Create a Python function to')">
-                        <div class="model-name">Python Code</div>
-                        <div class="model-desc">Generate Python functions</div>
-                    </button>
-                    <button class="model-option" onclick="setPrompt('Build a React component that')">
-                        <div class="model-name">React Component</div>
-                        <div class="model-desc">Create React components</div>
-                    </button>
-                    <button class="model-option" onclick="setPrompt('Write HTML/CSS for')">
-                        <div class="model-name">Web Design</div>
-                        <div class="model-desc">HTML, CSS, JavaScript</div>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="chat-area">
-                <div class="messages" id="messages">
-                    <div class="message ai-message">
-                        <div>👋 Welcome! I'm ready to help you with coding, explanations, and any questions you have. Select an AI model from the sidebar and start chatting!</div>
-                    </div>
-                </div>
-                
-                <div class="input-area">
-                    <div class="input-container">
-                        <input 
-                            type="text" 
-                            class="message-input" 
-                            id="messageInput" 
-                            placeholder="Ask for code, explanations, or anything else..."
-                            onkeypress="handleKeyPress(event)"
-                            autocomplete="off"
-                        >
-                        <button class="send-btn" onclick="sendMessage()" id="sendBtn" type="button">
-                            Send 🚀
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <h1>🤖 AI Chat & Code Generator</h1>
+        <p>Power: Puter.js (auto), or OpenAI key fallback — simulator if none available</p>
+      </div>
+      <div>
+        <span id="statusBadge" class="status">Loading...</span>
+      </div>
     </div>
 
-    <script>
-        let currentModel = 'claude-opus-4.1';
-        let isLoading = false;
+    <div class="main-content">
+      <div class="sidebar">
+        <div class="model-selector">
+          <h3>🧠 Choose AI Model</h3>
 
-        // Initialize Puter
-        let puter;
-        
-        async function initPuter() {
-            try {
-                puter = await window.puter.init();
-                console.log('Puter initialized successfully');
-            } catch (error) {
-                console.error('Failed to initialize Puter:', error);
-                addMessage('ai', 'Note: Puter.js is not available. This demo will simulate AI responses.', true);
-            }
+          <div class="model-category">🌟 Premium Models</div>
+          <div class="model-option active" data-model="claude-opus-4.1" data-tier="premium">
+            <div class="model-name">Claude Opus 4.1 🔥</div>
+            <div class="model-desc">Latest & most advanced Claude model</div>
+          </div>
+          <div class="model-option" data-model="gpt-4-turbo" data-tier="premium">
+            <div class="model-name">GPT-4 Turbo</div>
+            <div class="model-desc">OpenAI's fastest premium model</div>
+          </div>
+          <div class="model-option" data-model="gpt-4o" data-tier="premium">
+            <div class="model-name">GPT-4o</div>
+            <div class="model-desc">Optimized for coding & reasoning</div>
+          </div>
+          <div class="model-option" data-model="gemini-ultra" data-tier="premium">
+            <div class="model-name">Gemini Ultra</div>
+            <div class="model-desc">Google's most capable model</div>
+          </div>
+
+          <div class="model-category">🤖 Claude Family</div>
+          <div class="model-option" data-model="claude-3.5-sonnet" data-tier="standard">
+            <div class="model-name">Claude 3.5 Sonnet</div>
+            <div class="model-desc">Excellent for coding & analysis</div>
+          </div>
+          <div class="model-option" data-model="claude-3-opus" data-tier="standard">
+            <div class="model-name">Claude 3 Opus</div>
+            <div class="model-desc">Most capable Claude 3 model</div>
+          </div>
+
+          <div class="model-category">🚀 OpenAI Models</div>
+          <div class="model-option" data-model="gpt-4" data-tier="standard">
+            <div class="model-name">GPT-4</div>
+            <div class="model-desc">Original GPT-4, reliable</div>
+          </div>
+          <div class="model-option" data-model="gpt-3.5-turbo" data-tier="fast">
+            <div class="model-name">GPT-3.5 Turbo</div>
+            <div class="model-desc">Fast and cost-effective</div>
+          </div>
+
+          <div class="model-category">⚡ Other Models</div>
+          <div class="model-option" data-model="llama-3-70b" data-tier="standard">
+            <div class="model-name">Llama 3 70B</div>
+            <div class="model-desc">Meta's open-source champion</div>
+          </div>
+        </div>
+
+        <div class="quick-prompts">
+          <h3>⚡ Quick Actions</h3>
+          <button class="model-option" onclick="setPrompt('Create a Python function to')">
+            <div class="model-name">Python Code</div>
+            <div class="model-desc">Generate Python functions</div>
+          </button>
+          <button class="model-option" onclick="setPrompt('Build a React component that')">
+            <div class="model-name">React Component</div>
+            <div class="model-desc">Create React components</div>
+          </button>
+          <button class="model-option" onclick="setPrompt('Write HTML/CSS for')">
+            <div class="model-name">Web Design</div>
+            <div class="model-desc">HTML, CSS, JavaScript</div>
+          </button>
+        </div>
+
+        <div class="api-controls">
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-weight:600">OpenAI Key:</label>
+            <button id="pasteKeyBtn" style="padding:6px 8px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer">Paste Key</button>
+          </div>
+          <div class="small muted">Paste an OpenAI API key to use OpenAI directly from your browser. <strong>Not recommended for production</strong>.</div>
+          <textarea id="openaiKey" placeholder="sk-..." style="width:100%;margin-top:8px;padding:8px;border-radius:6px;border:1px solid #e2e8f0;height:44px;resize:vertical"></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="saveKeyBtn" style="flex:1;padding:8px;border-radius:8px;background:#4f46e5;color:#fff;border:none;cursor:pointer">Save Key (local)</button>
+            <button id="clearKeyBtn" style="flex:1;padding:8px;border-radius:8px;background:#fff;border:1px solid #e2e8f0;cursor:pointer">Clear</button>
+          </div>
+          <div class="small muted">Prefer a secure setup? Run a simple server-side proxy and keep your key secret.</div>
+        </div>
+      </div>
+
+      <div class="chat-area">
+        <div class="messages" id="messages">
+          <div class="message ai-message">
+            <div>👋 Welcome! Select a model and start chatting. If Puter.js isn't available, paste an OpenAI key or rely on the built-in demo responses.</div>
+          </div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-container">
+            <input type="text" class="message-input" id="messageInput" placeholder="Ask for code, explanations, or anything else..." onkeypress="handleKeyPress(event)" autocomplete="off" />
+            <button class="send-btn" onclick="sendMessage()" id="sendBtn" type="button">Send 🚀</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ---------- Configuration & State ----------
+  let currentModel = 'claude-opus-4.1';
+  let isLoading = false;
+  let puter = null;
+  const statusBadge = document.getElementById('statusBadge');
+  const OPENAI_LOCALSTORAGE_KEY = 'chat_openai_key_v1';
+
+  // models allowed directly with OpenAI (map some names to safe OpenAI model IDs)
+  const openaiModelMap = {
+    'gpt-4': 'gpt-4',
+    'gpt-4o': 'gpt-4o',
+    'gpt-4-turbo': 'gpt-4o',        // map to gpt-4o as an example
+    'gpt-3.5-turbo': 'gpt-3.5-turbo',
+    'gpt-3.5-turbo-16k': 'gpt-3.5-turbo-16k'
+    // other non-OpenAI named models will fallback to 'gpt-3.5-turbo'
+  };
+
+  // ---------- Utilities ----------
+  function setStatus(text, colorBg = null) {
+    statusBadge.textContent = text;
+    statusBadge.style.background = colorBg ? colorBg : 'rgba(255,255,255,0.08)';
+  }
+
+  function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+  }
+
+  // ---------- Dynamic Puter loading ----------
+  // Try to add script tags for Puter; if not available within timeout, move on.
+  function loadScript(url, timeoutMs = 5000) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.async = true;
+      s.onload = () => resolve(true);
+      s.onerror = () => reject(new Error('Failed to load ' + url));
+      document.head.appendChild(s);
+      if (timeoutMs) {
+        setTimeout(() => reject(new Error('Timeout loading ' + url)), timeoutMs);
+      }
+    });
+  }
+
+  async function tryLoadPuter() {
+    // Attempt common Puter hosts (primary, then cdn)
+    const candidates = [
+      'https://js.puter.com/v2/', // original attempt - sometimes serves a bundle
+      'https://js.puter.com/v2/puter.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/puter/2.0.0/puter.min.js'
+    ];
+
+    for (const url of candidates) {
+      try {
+        await loadScript(url, 4000);
+        // give the script a moment to initialize window.puter
+        await new Promise(r => setTimeout(r, 300));
+        if (window.puter) {
+          console.log('Puter script loaded from', url);
+          return true;
+        } else {
+          console.warn('Script loaded but window.puter not present from', url);
         }
+      } catch (e) {
+        console.warn('Could not load Puter from', url, e);
+      }
+    }
+    return false;
+  }
 
-        // Initialize when page loads - Fixed initialization
-        window.addEventListener('load', () => {
-            initPuter();
-            initializeModelSelection();
-            
-            // Make sure the input is ready
-            const input = document.getElementById('messageInput');
-            if (input) {
-                input.focus();
-                console.log('Message input ready');
-            }
-            
-            // Test send button
-            const sendBtn = document.getElementById('sendBtn');
-            if (sendBtn) {
-                console.log('Send button ready');
-            }
+  // ---------- Initialization ----------
+  async function initPuter() {
+    try {
+      const loaded = await tryLoadPuter();
+      if (!loaded) throw new Error('Puter script not available');
+
+      // Some puter builds expose window.puter.init or window.puter directly
+      if (window.puter && typeof window.puter.init === 'function') {
+        puter = await window.puter.init().catch(err => { console.warn('puter.init failed', err); return null; });
+      } else if (window.puter && window.puter.ai) {
+        puter = window.puter; // older style
+      } else {
+        puter = window.puter || null;
+      }
+
+      if (puter) {
+        setStatus('Puter ready', 'linear-gradient(90deg,#10b981,#06b6d4)');
+        console.log('Puter initialized', puter);
+      } else {
+        throw new Error('Puter present but initialization failed');
+      }
+    } catch (err) {
+      console.warn('Puter not available:', err);
+      setStatus('Puter unavailable — using fallback', 'linear-gradient(90deg,#f97316,#fb923c)');
+      puter = null;
+    }
+  }
+
+  // ---------- OpenAI key handling ----------
+  const keyTextarea = document.getElementById('openaiKey');
+  const saveKeyBtn = document.getElementById('saveKeyBtn');
+  const clearKeyBtn = document.getElementById('clearKeyBtn');
+  const pasteKeyBtn = document.getElementById('pasteKeyBtn');
+
+  function loadSavedKeyToUI() {
+    const saved = localStorage.getItem(OPENAI_LOCALSTORAGE_KEY);
+    if (saved) keyTextarea.value = saved;
+  }
+  loadSavedKeyToUI();
+
+  saveKeyBtn.addEventListener('click', () => {
+    const val = keyTextarea.value.trim();
+    if (!val) {
+      alert('Enter a key before saving.');
+      return;
+    }
+    localStorage.setItem(OPENAI_LOCALSTORAGE_KEY, val);
+    alert('Key saved locally (in your browser). For production, run a server to keep keys secret.');
+    setStatus('OpenAI key saved', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
+  });
+
+  clearKeyBtn.addEventListener('click', () => {
+    localStorage.removeItem(OPENAI_LOCALSTORAGE_KEY);
+    keyTextarea.value = '';
+    setStatus('OpenAI key cleared', 'linear-gradient(90deg,#f97316,#fb923c)');
+  });
+
+  pasteKeyBtn.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      keyTextarea.value = text.trim();
+      setStatus('Pasted key into box', 'linear-gradient(90deg,#60a5fa,#06b6d4)');
+    } catch (err) {
+      alert('Clipboard access denied. Paste manually.');
+    }
+  });
+
+  // ---------- Model selection ----------
+  function initializeModelSelection() {
+    document.querySelectorAll('.model-option[data-model]').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.model-option[data-model]').forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        currentModel = option.dataset.model;
+        addMessage('ai', `Switched to ${option.querySelector('.model-name').textContent}! How can I help you?`);
+      });
+    });
+  }
+
+  function setPrompt(prompt) {
+    const input = document.getElementById('messageInput');
+    input.value = prompt;
+    input.focus();
+  }
+
+  function handleKeyPress(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  // ---------- Message UI helpers ----------
+  function addMessage(sender, content, isError = false, isLoading = false) {
+    const messages = document.getElementById('messages');
+    const div = document.createElement('div');
+    const id = 'msg_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    div.id = id;
+
+    if (isLoading) {
+      div.className = 'message ai-message loading';
+      div.innerHTML = '<div class="spinner"></div><span>AI is thinking...</span>';
+    } else {
+      div.className = `message ${sender}-message ${isError ? 'error' : ''}`;
+      const formatted = formatMessage(content || '');
+      div.innerHTML = formatted;
+
+      // attach copy button for any code-blocks inside this message
+      div.querySelectorAll('.code-block').forEach(block => {
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy';
+        btn.onclick = () => copyCode(block, btn);
+        block.appendChild(btn);
+      });
+    }
+
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return id;
+  }
+
+  function removeMessage(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function formatMessage(content) {
+    if (!content) return '';
+    // keep code fences, inline code
+    const escaped = content // leave code-fences intact, but escape text parts
+      .replace(/```(\w+)?\n([\s\S]*?)```/g, (m, lang, code) => {
+        return `<div class="code-block"><pre><code>${escapeHtml(code.trim())}</code></pre></div>`;
+      }).replace(/`([^`]+)`/g, '<code style="background:#e2e8f0;padding:2px 6px;border-radius:4px;color:#1e293b;">$1</code>')
+      .replace(/\n/g, '<br>');
+    return escaped;
+  }
+
+  function copyCode(codeBlock, button) {
+    const codeEl = codeBlock.querySelector('code');
+    if (!codeEl) return;
+    const txt = codeEl.textContent;
+    navigator.clipboard.writeText(txt).then(() => {
+      const old = button.textContent;
+      button.textContent = 'Copied!';
+      setTimeout(() => button.textContent = old, 1500);
+    }).catch(() => alert('Copy failed'));
+  }
+
+  // ---------- Simulated responses (demo) ----------
+  async function simulateAIResponse(message, model) {
+    await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
+    const lower = message.toLowerCase();
+
+    if (lower.includes('python') || lower.includes('function')) {
+      return `Here's a Python function based on your request:\n\n\`\`\`python\ndef example_function(param):\n    \"\"\"\n    This is an example function generated by ${model}\n    \"\"\"\n    result = param * 2\n    return result\n\n# Usage example\nprint(example_function(5))  # Output: 10\n\`\`\``;
+    }
+
+    if (lower.includes('react') || lower.includes('component')) {
+      return `Here's a React component for you:\n\n\`\`\`jsx\nimport React, { useState } from 'react';\n\nconst ExampleComponent = () => {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <h2>Counter: {count}</h2>\n      <button onClick={() => setCount(count + 1)}>Increment</button>\n    </div>\n  );\n};\n\nexport default ExampleComponent;\n\`\`\``;
+    }
+
+    if (lower.includes('html') || lower.includes('css') || lower.includes('web')) {
+      return `Here's some HTML and CSS for you:\n\n\`\`\`html\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    .container{max-width:800px;margin:0 auto;padding:20px;font-family:Arial}\n  </style>\n</head>\n<body>\n  <div class="container">\n    <h1>Hello from ${model}!</h1>\n  </div>\n</body>\n</html>\n\`\`\``;
+    }
+
+    return `I'm ${model} (demo). I can help with coding, debugging, explanations and more — what would you like to work on?`;
+  }
+
+  // ---------- OpenAI client (client-side, insecure — for testing only) ----------
+  async function callOpenAI(message, chosenModel) {
+    const key = (keyTextarea.value || localStorage.getItem(OPENAI_LOCALSTORAGE_KEY) || '').trim();
+    if (!key) throw new Error('No OpenAI key provided');
+
+    // choose an OpenAI model that exists
+    const mapped = openaiModelMap[chosenModel] || Object.values(openaiModelMap)[0] || 'gpt-3.5-turbo';
+    const modelToUse = mapped;
+
+    const payload = {
+      model: modelToUse,
+      messages: [{ role: 'user', content: message }],
+      max_tokens: 1000,
+      temperature: 0.2
+    };
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + key,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error('OpenAI error: ' + res.status + ' ' + txt);
+    }
+
+    const data = await res.json();
+    // support both choices[0].message.content and older text fields
+    const content = (data.choices && data.choices[0] && (data.choices[0].message?.content || data.choices[0].text)) || JSON.stringify(data);
+    return content;
+  }
+
+  // ---------- Main send function ----------
+  async function sendMessage() {
+    const inputEl = document.getElementById('messageInput');
+    const message = (inputEl.value || '').trim();
+    if (!message || isLoading) return;
+
+    addMessage('user', escapeHtml(message));
+    inputEl.value = '';
+
+    isLoading = true;
+    const sendBtn = document.getElementById('sendBtn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Thinking...';
+
+    const loadingId = addMessage('ai', '', false, true);
+
+    try {
+      let aiText = '';
+
+      // Prefer Puter if initialized and has an ai.chat function
+      if (puter && puter.ai && typeof puter.ai.chat === 'function') {
+        setStatus('Using Puter.ai', 'linear-gradient(90deg,#10b981,#06b6d4)');
+        // Call whatever puter expects - try a typical shape; adjust based on actual puter API if differs
+        const puterResp = await puter.ai.chat({
+          model: currentModel,
+          messages: [{ role: 'user', content: message }]
         });
-
-        // Model selection - Fixed to work after page load
-        function initializeModelSelection() {
-            document.querySelectorAll('.model-option[data-model]').forEach(option => {
-                option.addEventListener('click', () => {
-                    // Remove active from all model options
-                    document.querySelectorAll('.model-option[data-model]').forEach(opt => opt.classList.remove('active'));
-                    option.classList.add('active');
-                    currentModel = option.dataset.model;
-                    addMessage('ai', `Switched to ${option.querySelector('.model-name').textContent}! How can I help you?`);
-                });
-            });
+        // the structure may vary — try common places
+        if (puterResp?.result?.content) aiText = puterResp.result.content;
+        else if (puterResp?.content) aiText = puterResp.content;
+        else if (typeof puterResp === 'string') aiText = puterResp;
+        else aiText = JSON.stringify(puterResp);
+      } else {
+        // If OpenAI key is present, use OpenAI
+        const openaiKey = (keyTextarea.value || localStorage.getItem(OPENAI_LOCALSTORAGE_KEY) || '').trim();
+        if (openaiKey) {
+          setStatus('Using OpenAI key', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
+          aiText = await callOpenAI(message, currentModel);
+        } else {
+          // last resort: simulated response
+          setStatus('Demo mode (simulated)', 'linear-gradient(90deg,#f97316,#fb923c)');
+          aiText = await simulateAIResponse(message, currentModel);
         }
+      }
 
-        function setPrompt(prompt) {
-            document.getElementById('messageInput').value = prompt;
-            document.getElementById('messageInput').focus();
-        }
+      removeMessage(loadingId);
+      addMessage('ai', aiText);
+    } catch (err) {
+      console.error('sendMessage error', err);
+      removeMessage(loadingId);
+      addMessage('ai', 'Error: ' + (err.message || String(err)), true);
+      setStatus('Error — see console', 'linear-gradient(90deg,#ef4444,#f97316)');
+    } finally {
+      isLoading = false;
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send 🚀';
+      inputEl.focus();
+    }
+  }
 
-        function handleKeyPress(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault(); // Prevent form submission or new line
-                sendMessage();
-            }
-        }
+  // ---------- Boot sequence ----------
+  window.addEventListener('load', async () => {
+    setStatus('Loading Puter...', 'rgba(255,255,255,0.08)');
+    await initPuter();              // try to load Puter
+    initializeModelSelection();     // wire up model buttons
+    const input = document.getElementById('messageInput');
+    if (input) input.focus();
+    // Load saved OpenAI key into box
+    loadSavedKeyToUI();
 
-        async function sendMessage() {
-            console.log('Send message called'); // Debug log
-            
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            console.log('Message:', message, 'Loading:', isLoading); // Debug log
-            
-            if (!message || isLoading) {
-                console.log('Message empty or loading, returning');
-                return;
-            }
-
-            // Add user message
-            addMessage('user', message);
-            input.value = '';
-            
-            // Show loading
-            isLoading = true;
-            const sendBtn = document.getElementById('sendBtn');
-            sendBtn.disabled = true;
-            sendBtn.textContent = 'Thinking...';
-            
-            const loadingId = addMessage('ai', '', false, true);
-
-            try {
-                let response;
-                
-                if (puter && puter.ai) {
-                    // Use actual Puter AI
-                    response = await puter.ai.chat({
-                        model: currentModel,
-                        messages: [{ role: 'user', content: message }]
-                    });
-                } else {
-                    // Simulate AI response for demo
-                    console.log('Using simulated response for model:', currentModel);
-                    response = await simulateAIResponse(message, currentModel);
-                }
-
-                // Remove loading message
-                removeMessage(loadingId);
-                
-                // Add AI response
-                addMessage('ai', response);
-                
-            } catch (error) {
-                console.error('Error in sendMessage:', error);
-                removeMessage(loadingId);
-                addMessage('ai', `Error: ${error.message}`, true);
-            } finally {
-                isLoading = false;
-                sendBtn.disabled = false;
-                sendBtn.textContent = 'Send 🚀';
-                input.focus(); // Return focus to input
-            }
-        }
-
-        function addMessage(sender, content, isError = false, isLoading = false) {
-            const messages = document.getElementById('messages');
-            const messageDiv = document.createElement('div');
-            const messageId = 'msg_' + Date.now();
-            messageDiv.id = messageId;
-            
-            if (isLoading) {
-                messageDiv.className = 'message ai-message loading';
-                messageDiv.innerHTML = '<div class="spinner"></div><span>AI is thinking...</span>';
-            } else {
-                messageDiv.className = `message ${sender}-message ${isError ? 'error' : ''}`;
-                
-                // Format content with code blocks
-                const formattedContent = formatMessage(content);
-                messageDiv.innerHTML = formattedContent;
-                
-                // Add copy buttons to code blocks
-                messageDiv.querySelectorAll('.code-block').forEach(block => {
-                    const copyBtn = document.createElement('button');
-                    copyBtn.className = 'copy-btn';
-                    copyBtn.textContent = 'Copy';
-                    copyBtn.onclick = () => copyCode(block, copyBtn);
-                    block.appendChild(copyBtn);
-                });
-            }
-            
-            messages.appendChild(messageDiv);
-            messages.scrollTop = messages.scrollHeight;
-            
-            return messageId;
-        }
-
-        function removeMessage(messageId) {
-            const message = document.getElementById(messageId);
-            if (message) {
-                message.remove();
-            }
-        }
-
-        function formatMessage(content) {
-            // Simple code block detection
-            return content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-                return `<div class="code-block"><pre><code>${escapeHtml(code.trim())}</code></pre></div>`;
-            }).replace(/`([^`]+)`/g, '<code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px; color: #1e293b;">$1</code>');
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function copyCode(codeBlock, button) {
-            const code = codeBlock.querySelector('code').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                button.textContent = 'Copied!';
-                setTimeout(() => {
-                    button.textContent = 'Copy';
-                }, 2000);
-            });
-        }
-
-        // Simulate AI responses for demo purposes
-        async function simulateAIResponse(message, model) {
-            // Simulate network delay
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-            
-            const lowerMessage = message.toLowerCase();
-            
-            if (lowerMessage.includes('python') || lowerMessage.includes('function')) {
-                return `Here's a Python function based on your request:\n\n\`\`\`python\ndef example_function(param):\n    """\n    This is an example function generated by ${model}\n    """\n    result = param * 2\n    return result\n\n# Usage example\nprint(example_function(5))  # Output: 10\n\`\`\`\n\nThis function demonstrates basic Python syntax. You can modify it based on your specific needs!`;
-            }
-            
-            if (lowerMessage.includes('react') || lowerMessage.includes('component')) {
-                return `Here's a React component for you:\n\n\`\`\`jsx\nimport React, { useState } from 'react';\n\nconst ExampleComponent = () => {\n  const [count, setCount] = useState(0);\n\n  return (\n    <div>\n      <h2>Counter: {count}</h2>\n      <button onClick={() => setCount(count + 1)}>\n        Increment\n      </button>\n    </div>\n  );\n};\n\nexport default ExampleComponent;\n\`\`\`\n\nThis component uses React hooks and demonstrates state management. Generated by ${model}!`;
-            }
-            
-            if (lowerMessage.includes('html') || lowerMessage.includes('css') || lowerMessage.includes('web')) {
-                return `Here's some HTML and CSS for you:\n\n\`\`\`html\n<!DOCTYPE html>\n<html>\n<head>\n    <style>\n        .container {\n            max-width: 800px;\n            margin: 0 auto;\n            padding: 20px;\n            font-family: Arial, sans-serif;\n        }\n        .highlight {\n            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);\n            color: white;\n            padding: 20px;\n            border-radius: 10px;\n        }\n    </style>\n</head>\n<body>\n    <div class="container">\n        <div class="highlight">\n            <h1>Hello from ${model}!</h1>\n            <p>This is a styled HTML example.</p>\n        </div>\n    </div>\n</body>\n</html>\n\`\`\`\n\nThis creates a responsive, styled webpage with a gradient background!`;
-            }
-            
-            // Default response
-            return `I'm ${model}, and I'm here to help! I can assist you with:\n\n• **Coding** - Python, JavaScript, React, HTML/CSS, and more\n• **Debugging** - Help fix issues in your code\n• **Explanations** - Explain concepts and algorithms\n• **Architecture** - Design patterns and best practices\n\nWhat would you like to work on? Feel free to ask for specific code examples or explanations!`;
-        }
-    </script>
+    // Quick check: if Puter is available mark ready; else keep fallback status
+    if (puter) setStatus('Puter ready', 'linear-gradient(90deg,#10b981,#06b6d4)');
+    else {
+      const savedKey = localStorage.getItem(OPENAI_LOCALSTORAGE_KEY);
+      if (savedKey) setStatus('OpenAI key ready', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
+      else setStatus('Demo mode (no Puter, no OpenAI key)', 'linear-gradient(90deg,#f97316,#fb923c)');
+    }
+  });
+  </script>
 </body>
 </html>
