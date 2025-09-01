@@ -3,318 +3,207 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI Chat & Code Generator (Puter / OpenAI fallback)</title>
+  <title>AI Chat & Code Generator — Robust Puter / OpenAI Fallback</title>
   <style>
-    /* (kept your existing styles with very small tweaks) */
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
-    .container{max-width:1200px;margin:0 auto;background:rgba(255,255,255,.95);border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.1);overflow:hidden;backdrop-filter:blur(10px)}
-    .header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:20px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px}
-    .header-left{flex:1}
-    .header h1{font-size:1.6rem;margin-bottom:6px;font-weight:700}
-    .header p{opacity:.9;font-size:.95rem;margin:0}
-    .status {font-size:.9rem; padding:8px 12px; border-radius:12px; background: rgba(255,255,255,0.08); display:inline-block; margin-left:10px;}
-    .main-content{display:grid;grid-template-columns:300px 1fr;min-height:600px}
-    .sidebar{background:#f8fafc;border-right:1px solid #e2e8f0;padding:18px;overflow:auto}
-    .model-selector{margin-bottom:18px}
-    .model-selector h3{color:#1e293b;margin-bottom:15px;font-size:1.05rem}
-    .model-category{color:#4f46e5;font-weight:700;font-size:.85rem;margin:14px 0 8px;padding-bottom:6px;border-bottom:2px solid #e2e8f0;text-transform:uppercase;letter-spacing:.5px}
-    .model-option{background:#fff;border:2px solid #e2e8f0;border-radius:10px;padding:12px 15px;margin-bottom:8px;cursor:pointer;transition:all .2s;position:relative;display:block;text-align:left}
-    .model-option:hover{border-color:#4f46e5;transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,.06)}
-    .model-option.active{border-color:#4f46e5;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
-    .model-name{font-weight:600;margin-bottom:4px}
-    .model-desc{font-size:.82rem;opacity:.8}
-    .quick-prompts{margin-top:10px}
-    .quick-prompts button{width:100%;margin-bottom:8px}
-    .chat-area{display:flex;flex-direction:column;height:600px}
-    .messages{flex:1;padding:22px;overflow-y:auto;background:#fff}
-    .message{margin-bottom:18px;padding:14px 18px;border-radius:14px;max-width:80%;animation:slideIn .25s ease}
-    @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-    .user-message{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;margin-left:auto;border-bottom-right-radius:5px}
-    .ai-message{background:#f1f5f9;color:#1e293b;margin-right:auto;border-bottom-left-radius:5px;border-left:4px solid #4f46e5}
-    .code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;margin:10px 0;font-family:'Courier New',monospace;overflow-x:auto;position:relative}
-    .copy-btn{position:absolute;top:8px;right:8px;background:#4f46e5;color:#fff;border:none;padding:6px 9px;border-radius:6px;cursor:pointer;font-size:.8rem}
-    .input-area{padding:18px;background:#f8fafc;border-top:1px solid #e2e8f0}
-    .input-container{display:flex;gap:12px}
-    .message-input{flex:1;padding:12px 16px;border:2px solid #e2e8f0;border-radius:22px;font-size:1rem;outline:none}
-    .message-input:focus{border-color:#4f46e5}
-    .send-btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;padding:12px 18px;border-radius:22px;cursor:pointer;font-weight:600}
+    /* Visuals (kept compact but familiar) */
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:18px}
+    .container{max-width:1200px;margin:0 auto;background:rgba(255,255,255,.96);border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,.12);overflow:hidden}
+    .header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;gap:12px}
+    .header h1{font-size:1.4rem;margin-bottom:4px}
+    .header p{margin:0;opacity:.95;font-size:.95rem}
+    .status{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.12);font-size:.9rem}
+    .main{display:grid;grid-template-columns:300px 1fr;min-height:620px}
+    .sidebar{padding:18px;border-right:1px solid #e6eef8;background:#fbfdff}
+    .chatwrap{display:flex;flex-direction:column;height:100%}
+    .models h3{margin-bottom:8px;font-size:1rem}
+    .model-category{color:#4f46e5;font-weight:700;margin-top:12px;margin-bottom:8px;font-size:.85rem}
+    .model-option{background:#fff;border:2px solid #e8eef8;border-radius:10px;padding:10px;margin-bottom:8px;cursor:pointer;transition:all .15s;display:block}
+    .model-option:hover{transform:translateY(-2px);border-color:#4f46e5}
+    .model-option.active{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-color:#4f46e5}
+    .model-name{font-weight:600}
+    .model-desc{font-size:.82rem;opacity:.85}
+    .quick-prompts{margin-top:12px}
+    .quick-prompts button{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef8;background:#fff;margin-bottom:8px;cursor:pointer}
+    .api-controls{margin-top:12px;padding:10px;border-radius:8px;background:#fff;border:1px solid #eef6ff}
+    .api-controls textarea{width:100%;height:44px;padding:8px;border-radius:6px;border:1px solid #e6eef8;resize:vertical}
+    .api-actions{display:flex;gap:8px;margin-top:8px}
+    .api-actions button{flex:1;padding:8px;border-radius:8px;border:none;cursor:pointer}
+    .save-btn{background:#4f46e5;color:#fff}
+    .clear-btn{background:#fff;border:1px solid #e6eef8}
+    .messages{padding:20px;background:#fff;overflow:auto;flex:1}
+    .message{margin-bottom:16px;padding:12px;border-radius:12px;max-width:82%;animation:slide .18s ease}
+    @keyframes slide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+    .user-message{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;margin-left:auto;border-bottom-right-radius:6px}
+    .ai-message{background:#f1f5f9;color:#0f172a;border-left:4px solid #4f46e5;border-bottom-left-radius:6px}
+    .code-block{background:#0f1722;color:#e6eef8;padding:12px;border-radius:8px;margin-top:8px;font-family:monospace;position:relative;overflow:auto}
+    .copy-btn{position:absolute;top:8px;right:8px;background:#4f46e5;color:#fff;border:none;padding:6px 8px;border-radius:6px;cursor:pointer}
+    .input-area{padding:14px;border-top:1px solid #eef6ff;background:#fbfdff;display:flex;gap:10px;align-items:center}
+    .message-input{flex:1;padding:12px 14px;border-radius:22px;border:2px solid #e6eef8;font-size:1rem}
+    .send-btn{padding:11px 16px;border-radius:22px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;cursor:pointer;font-weight:600}
     .send-btn[disabled]{opacity:.6;cursor:not-allowed}
-    .loading{display:flex;align-items:center;gap:10px;color:#64748b;font-style:italic}
-    .spinner{width:18px;height:18px;border:2px solid #e2e8f0;border-top:2px solid #4f46e5;border-radius:50%;animation:spin 1s linear infinite}
-    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-    .error{background:#fef2f2;color:#dc2626;border-left:4px solid #dc2626}
-    .api-controls{margin-top:12px;padding:8px;background:#fff;border-radius:8px;border:1px solid #e2e8f0}
-    .small{font-size:.85rem;color:#475569;margin-top:6px}
-    .muted{opacity:.75;font-size:.85rem}
-    @media (max-width:768px){.main-content{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid #e2e8f0}.header{flex-direction:column;align-items:flex-start}}
+    .loading{display:flex;gap:10px;align-items:center;color:#64748b}
+    .spinner{width:18px;height:18px;border:2px solid #e8eef8;border-top:2px solid #4f46e5;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .error{background:#fff6f6;color:#7f1d1d;border-left:4px solid #ef4444}
+    .muted{font-size:.85rem;color:#475569;margin-top:8px}
+    @media (max-width:820px){.main{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid #eef6ff}}
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="header-left">
-        <h1>🤖 AI Chat & Code Generator</h1>
-        <p>Power: Puter.js (auto), or OpenAI key fallback — simulator if none available</p>
-      </div>
       <div>
-        <span id="statusBadge" class="status">Loading...</span>
+        <h1>🤖 AI Chat & Code Generator</h1>
+        <p style="margin-top:6px;opacity:.95">Puter.js attempt → OpenAI key fallback → Demo responses</p>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div id="statusBadge" class="status">Starting…</div>
+        <div class="muted" style="text-align:right">Tip: For real OpenAI use a server-side proxy; client keys are insecure.</div>
       </div>
     </div>
 
-    <div class="main-content">
+    <div class="main">
       <div class="sidebar">
-        <div class="model-selector">
+        <div class="models">
           <h3>🧠 Choose AI Model</h3>
 
           <div class="model-category">🌟 Premium Models</div>
-          <div class="model-option active" data-model="claude-opus-4.1" data-tier="premium">
-            <div class="model-name">Claude Opus 4.1 🔥</div>
-            <div class="model-desc">Latest & most advanced Claude model</div>
-          </div>
-          <div class="model-option" data-model="gpt-4-turbo" data-tier="premium">
-            <div class="model-name">GPT-4 Turbo</div>
-            <div class="model-desc">OpenAI's fastest premium model</div>
-          </div>
-          <div class="model-option" data-model="gpt-4o" data-tier="premium">
-            <div class="model-name">GPT-4o</div>
-            <div class="model-desc">Optimized for coding & reasoning</div>
-          </div>
-          <div class="model-option" data-model="gemini-ultra" data-tier="premium">
-            <div class="model-name">Gemini Ultra</div>
-            <div class="model-desc">Google's most capable model</div>
-          </div>
+          <div class="model-option active" data-model="claude-opus-4.1"><div class="model-name">Claude Opus 4.1 🔥</div><div class="model-desc">Opus family - powerful</div></div>
+          <div class="model-option" data-model="gpt-4-turbo"><div class="model-name">GPT-4 Turbo</div><div class="model-desc">OpenAI fast premium</div></div>
+          <div class="model-option" data-model="gpt-4o"><div class="model-name">GPT-4o</div><div class="model-desc">Reasoning & code</div></div>
 
           <div class="model-category">🤖 Claude Family</div>
-          <div class="model-option" data-model="claude-3.5-sonnet" data-tier="standard">
-            <div class="model-name">Claude 3.5 Sonnet</div>
-            <div class="model-desc">Excellent for coding & analysis</div>
-          </div>
-          <div class="model-option" data-model="claude-3-opus" data-tier="standard">
-            <div class="model-name">Claude 3 Opus</div>
-            <div class="model-desc">Most capable Claude 3 model</div>
-          </div>
+          <div class="model-option" data-model="claude-3.5-sonnet"><div class="model-name">Claude 3.5 Sonnet</div></div>
+          <div class="model-option" data-model="claude-3-opus"><div class="model-name">Claude 3 Opus</div></div>
 
           <div class="model-category">🚀 OpenAI Models</div>
-          <div class="model-option" data-model="gpt-4" data-tier="standard">
-            <div class="model-name">GPT-4</div>
-            <div class="model-desc">Original GPT-4, reliable</div>
-          </div>
-          <div class="model-option" data-model="gpt-3.5-turbo" data-tier="fast">
-            <div class="model-name">GPT-3.5 Turbo</div>
-            <div class="model-desc">Fast and cost-effective</div>
-          </div>
+          <div class="model-option" data-model="gpt-4"><div class="model-name">GPT-4</div></div>
+          <div class="model-option" data-model="gpt-3.5-turbo"><div class="model-name">GPT-3.5 Turbo</div></div>
 
-          <div class="model-category">⚡ Other Models</div>
-          <div class="model-option" data-model="llama-3-70b" data-tier="standard">
-            <div class="model-name">Llama 3 70B</div>
-            <div class="model-desc">Meta's open-source champion</div>
-          </div>
+          <div class="model-category">⚡ Other</div>
+          <div class="model-option" data-model="llama-3-70b"><div class="model-name">Llama 3 70B</div></div>
         </div>
 
-        <div class="quick-prompts">
+        <div class="quick-prompts" style="margin-top:12px">
           <h3>⚡ Quick Actions</h3>
-          <button class="model-option" onclick="setPrompt('Create a Python function to')">
-            <div class="model-name">Python Code</div>
-            <div class="model-desc">Generate Python functions</div>
-          </button>
-          <button class="model-option" onclick="setPrompt('Build a React component that')">
-            <div class="model-name">React Component</div>
-            <div class="model-desc">Create React components</div>
-          </button>
-          <button class="model-option" onclick="setPrompt('Write HTML/CSS for')">
-            <div class="model-name">Web Design</div>
-            <div class="model-desc">HTML, CSS, JavaScript</div>
-          </button>
+          <button onclick="setPrompt('Create a Python function to')">Python Code</button>
+          <button onclick="setPrompt('Build a React component that')">React Component</button>
+          <button onclick="setPrompt('Write HTML/CSS for')">Web Design</button>
         </div>
 
         <div class="api-controls">
-          <div style="display:flex;gap:8px;align-items:center">
-            <label style="font-weight:600">OpenAI Key:</label>
-            <button id="pasteKeyBtn" style="padding:6px 8px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer">Paste Key</button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <strong>OpenAI Key</strong>
+            <button id="pasteKey" style="padding:6px;border-radius:8px;border:1px solid #e6eef8;background:#fff;cursor:pointer">Paste</button>
           </div>
-          <div class="small muted">Paste an OpenAI API key to use OpenAI directly from your browser. <strong>Not recommended for production</strong>.</div>
-          <textarea id="openaiKey" placeholder="sk-..." style="width:100%;margin-top:8px;padding:8px;border-radius:6px;border:1px solid #e2e8f0;height:44px;resize:vertical"></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="saveKeyBtn" style="flex:1;padding:8px;border-radius:8px;background:#4f46e5;color:#fff;border:none;cursor:pointer">Save Key (local)</button>
-            <button id="clearKeyBtn" style="flex:1;padding:8px;border-radius:8px;background:#fff;border:1px solid #e2e8f0;cursor:pointer">Clear</button>
+          <textarea id="openaiKey" placeholder="sk-... (optional, client-side testing only)"></textarea>
+          <div class="api-actions">
+            <button id="saveKey" class="save-btn">Save Key (local)</button>
+            <button id="clearKey" class="clear-btn">Clear</button>
           </div>
-          <div class="small muted">Prefer a secure setup? Run a simple server-side proxy and keep your key secret.</div>
+          <div class="muted">Saved locally for convenience only. Server-proxy recommended for production.</div>
         </div>
       </div>
 
-      <div class="chat-area">
-        <div class="messages" id="messages">
-          <div class="message ai-message">
-            <div>👋 Welcome! Select a model and start chatting. If Puter.js isn't available, paste an OpenAI key or rely on the built-in demo responses.</div>
-          </div>
+      <div class="chatwrap">
+        <div id="messages" class="messages">
+          <div class="message ai-message">👋 Welcome — select a model and ask for code, debugging, or explanations.</div>
         </div>
 
         <div class="input-area">
-          <div class="input-container">
-            <input type="text" class="message-input" id="messageInput" placeholder="Ask for code, explanations, or anything else..." onkeypress="handleKeyPress(event)" autocomplete="off" />
-            <button class="send-btn" onclick="sendMessage()" id="sendBtn" type="button">Send 🚀</button>
-          </div>
+          <input id="messageInput" class="message-input" type="text" placeholder="Ask for code, debugging, or anything..." onkeypress="handleKeyPress(event)" autocomplete="off" />
+          <button id="sendBtn" class="send-btn" onclick="sendMessage()">Send 🚀</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-  // ---------- Configuration & State ----------
+  /* ============================
+     Robust AI Chat — Single File
+     - Attempts Puter.js from common URLs
+     - Robustly extracts text from many response shapes
+     - Falls back to OpenAI (client key) if provided
+     - Falls back to simulated demo responses otherwise
+     ============================ */
+
+  // ---------- State ----------
   let currentModel = 'claude-opus-4.1';
   let isLoading = false;
   let puter = null;
+  const OPENAI_STORAGE_KEY = 'chat_openai_key_v1';
   const statusBadge = document.getElementById('statusBadge');
-  const OPENAI_LOCALSTORAGE_KEY = 'chat_openai_key_v1';
 
-  // models allowed directly with OpenAI (map some names to safe OpenAI model IDs)
-  const openaiModelMap = {
-    'gpt-4': 'gpt-4',
-    'gpt-4o': 'gpt-4o',
-    'gpt-4-turbo': 'gpt-4o',        // map to gpt-4o as an example
-    'gpt-3.5-turbo': 'gpt-3.5-turbo',
-    'gpt-3.5-turbo-16k': 'gpt-3.5-turbo-16k'
-    // other non-OpenAI named models will fallback to 'gpt-3.5-turbo'
-  };
-
-  // ---------- Utilities ----------
-  function setStatus(text, colorBg = null) {
+  // ---------- UI helpers ----------
+  function setStatus(text, style) {
     statusBadge.textContent = text;
-    statusBadge.style.background = colorBg ? colorBg : 'rgba(255,255,255,0.08)';
+    if (style) statusBadge.style.background = style;
+    else statusBadge.style.background = 'rgba(255,255,255,.12)';
   }
 
-  function escapeHtml(text) {
-    const d = document.createElement('div');
-    d.textContent = text;
-    return d.innerHTML;
+  function escapeHtml(s) {
+    const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML;
   }
 
-  // ---------- Dynamic Puter loading ----------
-  // Try to add script tags for Puter; if not available within timeout, move on.
-  function loadScript(url, timeoutMs = 5000) {
-    return new Promise((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = url;
-      s.async = true;
-      s.onload = () => resolve(true);
-      s.onerror = () => reject(new Error('Failed to load ' + url));
-      document.head.appendChild(s);
-      if (timeoutMs) {
-        setTimeout(() => reject(new Error('Timeout loading ' + url)), timeoutMs);
-      }
-    });
-  }
+  function addMessage(sender, content, isError = false, isLoadingMsg = false) {
+    const container = document.getElementById('messages');
+    const msg = document.createElement('div');
+    const id = 'm_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+    msg.id = id;
 
-  async function tryLoadPuter() {
-    // Attempt common Puter hosts (primary, then cdn)
-    const candidates = [
-      'https://js.puter.com/v2/', // original attempt - sometimes serves a bundle
-      'https://js.puter.com/v2/puter.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/puter/2.0.0/puter.min.js'
-    ];
-
-    for (const url of candidates) {
-      try {
-        await loadScript(url, 4000);
-        // give the script a moment to initialize window.puter
-        await new Promise(r => setTimeout(r, 300));
-        if (window.puter) {
-          console.log('Puter script loaded from', url);
-          return true;
-        } else {
-          console.warn('Script loaded but window.puter not present from', url);
-        }
-      } catch (e) {
-        console.warn('Could not load Puter from', url, e);
-      }
-    }
-    return false;
-  }
-
-  // ---------- Initialization ----------
-  async function initPuter() {
-    try {
-      const loaded = await tryLoadPuter();
-      if (!loaded) throw new Error('Puter script not available');
-
-      // Some puter builds expose window.puter.init or window.puter directly
-      if (window.puter && typeof window.puter.init === 'function') {
-        puter = await window.puter.init().catch(err => { console.warn('puter.init failed', err); return null; });
-      } else if (window.puter && window.puter.ai) {
-        puter = window.puter; // older style
-      } else {
-        puter = window.puter || null;
-      }
-
-      if (puter) {
-        setStatus('Puter ready', 'linear-gradient(90deg,#10b981,#06b6d4)');
-        console.log('Puter initialized', puter);
-      } else {
-        throw new Error('Puter present but initialization failed');
-      }
-    } catch (err) {
-      console.warn('Puter not available:', err);
-      setStatus('Puter unavailable — using fallback', 'linear-gradient(90deg,#f97316,#fb923c)');
-      puter = null;
-    }
-  }
-
-  // ---------- OpenAI key handling ----------
-  const keyTextarea = document.getElementById('openaiKey');
-  const saveKeyBtn = document.getElementById('saveKeyBtn');
-  const clearKeyBtn = document.getElementById('clearKeyBtn');
-  const pasteKeyBtn = document.getElementById('pasteKeyBtn');
-
-  function loadSavedKeyToUI() {
-    const saved = localStorage.getItem(OPENAI_LOCALSTORAGE_KEY);
-    if (saved) keyTextarea.value = saved;
-  }
-  loadSavedKeyToUI();
-
-  saveKeyBtn.addEventListener('click', () => {
-    const val = keyTextarea.value.trim();
-    if (!val) {
-      alert('Enter a key before saving.');
-      return;
-    }
-    localStorage.setItem(OPENAI_LOCALSTORAGE_KEY, val);
-    alert('Key saved locally (in your browser). For production, run a server to keep keys secret.');
-    setStatus('OpenAI key saved', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
-  });
-
-  clearKeyBtn.addEventListener('click', () => {
-    localStorage.removeItem(OPENAI_LOCALSTORAGE_KEY);
-    keyTextarea.value = '';
-    setStatus('OpenAI key cleared', 'linear-gradient(90deg,#f97316,#fb923c)');
-  });
-
-  pasteKeyBtn.addEventListener('click', async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      keyTextarea.value = text.trim();
-      setStatus('Pasted key into box', 'linear-gradient(90deg,#60a5fa,#06b6d4)');
-    } catch (err) {
-      alert('Clipboard access denied. Paste manually.');
-    }
-  });
-
-  // ---------- Model selection ----------
-  function initializeModelSelection() {
-    document.querySelectorAll('.model-option[data-model]').forEach(option => {
-      option.addEventListener('click', () => {
-        document.querySelectorAll('.model-option[data-model]').forEach(opt => opt.classList.remove('active'));
-        option.classList.add('active');
-        currentModel = option.dataset.model;
-        addMessage('ai', `Switched to ${option.querySelector('.model-name').textContent}! How can I help you?`);
+    if (isLoadingMsg) {
+      msg.className = 'message ai-message loading';
+      msg.innerHTML = '<div class="spinner"></div><span style="margin-left:10px">AI is thinking...</span>';
+    } else {
+      msg.className = 'message ' + (sender === 'user' ? 'user-message' : 'ai-message') + (isError ? ' error' : '');
+      msg.innerHTML = formatMessage(content);
+      // attach copy buttons
+      msg.querySelectorAll('.code-block').forEach(block => {
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'Copy';
+        btn.onclick = () => copyCode(block, btn);
+        block.appendChild(btn);
       });
-    });
+    }
+
+    container.appendChild(msg);
+    container.scrollTop = container.scrollHeight;
+    return id;
   }
 
-  function setPrompt(prompt) {
-    const input = document.getElementById('messageInput');
-    input.value = prompt;
-    input.focus();
+  function removeMessage(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function formatMessage(text) {
+    if (!text && text !== 0) return '';
+    // treat text as string or object
+    let s = (typeof text === 'string') ? text : JSON.stringify(text, null, 2);
+    // convert code fences
+    s = s.replace(/```(\w+)?\n([\s\S]*?)```/g, (m, lang, code) => {
+      return `<div class="code-block"><pre><code>${escapeHtml(code.trim())}</code></pre></div>`;
+    });
+    // inline code
+    s = s.replace(/`([^`]+)`/g, '<code style="background:#eef2ff;padding:2px 6px;border-radius:4px;">$1</code>');
+    // convert newlines to <br> for non-code parts
+    // but avoid converting inside code-blocks — we already placed them
+    // For safety: replace remaining newlines with <br>
+    s = s.replace(/\n/g, '<br>');
+    return s;
+  }
+
+  function copyCode(block, btn) {
+    const codeEl = block.querySelector('code');
+    if (!codeEl) return;
+    const text = codeEl.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const prev = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = prev, 1500);
+    }).catch(() => alert('Copy failed'));
   }
 
   function handleKeyPress(e) {
@@ -324,129 +213,201 @@
     }
   }
 
-  // ---------- Message UI helpers ----------
-  function addMessage(sender, content, isError = false, isLoading = false) {
-    const messages = document.getElementById('messages');
-    const div = document.createElement('div');
-    const id = 'msg_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-    div.id = id;
-
-    if (isLoading) {
-      div.className = 'message ai-message loading';
-      div.innerHTML = '<div class="spinner"></div><span>AI is thinking...</span>';
-    } else {
-      div.className = `message ${sender}-message ${isError ? 'error' : ''}`;
-      const formatted = formatMessage(content || '');
-      div.innerHTML = formatted;
-
-      // attach copy button for any code-blocks inside this message
-      div.querySelectorAll('.code-block').forEach(block => {
-        const btn = document.createElement('button');
-        btn.className = 'copy-btn';
-        btn.textContent = 'Copy';
-        btn.onclick = () => copyCode(block, btn);
-        block.appendChild(btn);
-      });
+  // ---------- Safe stringify (circular-safe) ----------
+  function getCircularReplacer() {
+    const seen = new WeakSet();
+    return (k, v) => {
+      if (typeof v === 'object' && v !== null) {
+        if (seen.has(v)) return '[Circular]';
+        seen.add(v);
+      }
+      return v;
+    };
+  }
+  function safeStringify(obj, maxLen = 4000) {
+    try {
+      return JSON.stringify(obj, getCircularReplacer(), 2).slice(0, maxLen);
+    } catch (e) {
+      try { return String(obj).slice(0, maxLen); } catch (e2) { return '[unserializable]'; }
     }
-
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
-    return id;
   }
 
-  function removeMessage(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-  }
-
-  function formatMessage(content) {
-    if (!content) return '';
-    // keep code fences, inline code
-    const escaped = content // leave code-fences intact, but escape text parts
-      .replace(/```(\w+)?\n([\s\S]*?)```/g, (m, lang, code) => {
-        return `<div class="code-block"><pre><code>${escapeHtml(code.trim())}</code></pre></div>`;
-      }).replace(/`([^`]+)`/g, '<code style="background:#e2e8f0;padding:2px 6px;border-radius:4px;color:#1e293b;">$1</code>')
-      .replace(/\n/g, '<br>');
-    return escaped;
-  }
-
-  function copyCode(codeBlock, button) {
-    const codeEl = codeBlock.querySelector('code');
-    if (!codeEl) return;
-    const txt = codeEl.textContent;
-    navigator.clipboard.writeText(txt).then(() => {
-      const old = button.textContent;
-      button.textContent = 'Copied!';
-      setTimeout(() => button.textContent = old, 1500);
-    }).catch(() => alert('Copy failed'));
-  }
-
-  // ---------- Simulated responses (demo) ----------
-  async function simulateAIResponse(message, model) {
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
-    const lower = message.toLowerCase();
-
-    if (lower.includes('python') || lower.includes('function')) {
-      return `Here's a Python function based on your request:\n\n\`\`\`python\ndef example_function(param):\n    \"\"\"\n    This is an example function generated by ${model}\n    \"\"\"\n    result = param * 2\n    return result\n\n# Usage example\nprint(example_function(5))  # Output: 10\n\`\`\``;
-    }
-
-    if (lower.includes('react') || lower.includes('component')) {
-      return `Here's a React component for you:\n\n\`\`\`jsx\nimport React, { useState } from 'react';\n\nconst ExampleComponent = () => {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <h2>Counter: {count}</h2>\n      <button onClick={() => setCount(count + 1)}>Increment</button>\n    </div>\n  );\n};\n\nexport default ExampleComponent;\n\`\`\``;
-    }
-
-    if (lower.includes('html') || lower.includes('css') || lower.includes('web')) {
-      return `Here's some HTML and CSS for you:\n\n\`\`\`html\n<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    .container{max-width:800px;margin:0 auto;padding:20px;font-family:Arial}\n  </style>\n</head>\n<body>\n  <div class="container">\n    <h1>Hello from ${model}!</h1>\n  </div>\n</body>\n</html>\n\`\`\``;
-    }
-
-    return `I'm ${model} (demo). I can help with coding, debugging, explanations and more — what would you like to work on?`;
-  }
-
-  // ---------- OpenAI client (client-side, insecure — for testing only) ----------
-  async function callOpenAI(message, chosenModel) {
-    const key = (keyTextarea.value || localStorage.getItem(OPENAI_LOCALSTORAGE_KEY) || '').trim();
-    if (!key) throw new Error('No OpenAI key provided');
-
-    // choose an OpenAI model that exists
-    const mapped = openaiModelMap[chosenModel] || Object.values(openaiModelMap)[0] || 'gpt-3.5-turbo';
-    const modelToUse = mapped;
-
-    const payload = {
-      model: modelToUse,
-      messages: [{ role: 'user', content: message }],
-      max_tokens: 1000,
-      temperature: 0.2
+  // ---------- Robust extractor for many provider response shapes ----------
+  function extractTextFromResponse(resp) {
+    if (resp == null) return '';
+    if (typeof resp === 'string') return resp;
+    // Common locations to try (ordered)
+    const paths = [
+      ['choices',0,'message','content'],
+      ['choices',0,'text'],
+      ['output_text'],
+      ['result','content'],
+      ['result','response','content',0,'text'],
+      ['content'],
+      ['message','content'],
+      ['data',0,'text'],
+      ['outputs',0,'content',0,'text'],
+      ['output',0,'content',0,'text'],
+      ['response','text'],
+      ['output_texts'],
+      ['answer'],
+      ['body','text']
+    ];
+    const dig = (o, p) => {
+      try {
+        for (const k of p) {
+          if (o == null) return undefined;
+          o = o[k];
+        }
+        return o;
+      } catch (e) { return undefined; }
     };
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + key,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error('OpenAI error: ' + res.status + ' ' + txt);
+    for (const p of paths) {
+      const v = dig(resp, p);
+      if (v == null) continue;
+      if (typeof v === 'string' && v.trim() !== '') return v;
+      if (Array.isArray(v)) {
+        const joined = v.map(x => (typeof x === 'string' ? x : (x?.text || safeStringify(x,1000)))).join('\n');
+        if (joined.trim() !== '') return joined;
+      }
     }
 
-    const data = await res.json();
-    // support both choices[0].message.content and older text fields
-    const content = (data.choices && data.choices[0] && (data.choices[0].message?.content || data.choices[0].text)) || JSON.stringify(data);
-    return content;
+    // Support: outputs array with content pieces
+    if (Array.isArray(resp.outputs)) {
+      const parts = [];
+      resp.outputs.forEach(o => {
+        if (!o) return;
+        if (typeof o === 'string') parts.push(o);
+        if (o.content) {
+          if (Array.isArray(o.content)) {
+            o.content.forEach(c => {
+              if (typeof c === 'string') parts.push(c);
+              else if (c?.text) parts.push(c.text);
+              else parts.push(safeStringify(c,1000));
+            });
+          } else {
+            parts.push(safeStringify(o.content,1000));
+          }
+        }
+      });
+      if (parts.length) return parts.join('\n\n');
+    }
+
+    // shallow search for string fields
+    const stringsFound = [];
+    (function hunt(o, depth=0) {
+      if (!o || typeof o !== 'object' || depth>6) return;
+      for (const k of Object.keys(o)) {
+        try {
+          const v = o[k];
+          if (typeof v === 'string' && v.trim()) stringsFound.push(v);
+          else if (typeof v === 'object') hunt(v, depth+1);
+        } catch (e) {}
+        if (stringsFound.length >= 6) return;
+      }
+    })(resp);
+    if (stringsFound.length) return stringsFound.join('\n\n');
+
+    // fallback to JSON dump
+    return safeStringify(resp, 3000);
   }
 
-  // ---------- Main send function ----------
+  // ---------- Puter loader (tries multiple URLs) ----------
+  function loadScript(url, timeout=4000) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.async = true;
+      s.onload = () => resolve(true);
+      s.onerror = () => reject(new Error('Load failed: ' + url));
+      document.head.appendChild(s);
+      if (timeout) setTimeout(()=> reject(new Error('Timeout loading ' + url)), timeout);
+    });
+  }
+
+  async function tryInitPuter() {
+    const candidates = [
+      'https://js.puter.com/v2/',
+      'https://js.puter.com/v2/puter.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/puter/2.0.0/puter.min.js'
+    ];
+    for (const url of candidates) {
+      try {
+        await loadScript(url, 3500);
+        await new Promise(r => setTimeout(r, 250));
+        if (window.puter) {
+          // try to initialize if init fn exists
+          try {
+            if (typeof window.puter.init === 'function') {
+              const maybe = await window.puter.init().catch(e=>{ console.warn('puter.init err',e); return null; });
+              puter = maybe || window.puter;
+            } else puter = window.puter;
+          } catch(e) {
+            puter = window.puter || null;
+          }
+          if (puter) return true;
+        }
+      } catch (e) {
+        console.warn('Puter load fail', url, e);
+      }
+    }
+    return false;
+  }
+
+  // ---------- OpenAI client (client-side, insecure; only for testing) ----------
+  const openaiModelMap = {
+    'gpt-4':'gpt-4',
+    'gpt-4o':'gpt-4o',
+    'gpt-4-turbo':'gpt-4o',
+    'gpt-3.5-turbo':'gpt-3.5-turbo'
+  };
+
+  async function callOpenAI(message, chosenModel) {
+    const key = (document.getElementById('openaiKey').value || localStorage.getItem(OPENAI_STORAGE_KEY) || '').trim();
+    if (!key) throw new Error('No OpenAI key found (paste it into the sidebar)');
+    const model = openaiModelMap[chosenModel] || 'gpt-3.5-turbo';
+    const payload = { model, messages: [{ role: 'user', content: message }], max_tokens: 1200, temperature: 0.2 };
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method:'POST',
+      headers:{ 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const errTxt = await res.text().catch(()=>res.statusText);
+      throw new Error('OpenAI error: ' + res.status + ' ' + errTxt);
+    }
+    const d = await res.json();
+    // typical path: d.choices[0].message.content
+    return extractTextFromResponse(d);
+  }
+
+  // ---------- Demo simulator ----------
+  async function simulateAIResponse(message, model) {
+    await new Promise(r => setTimeout(r, 700 + Math.random()*900));
+    const lower = message.toLowerCase();
+    if (lower.includes('python') || lower.includes('function')) {
+      return `Here's a Python function (generated by ${model}):\n\n\`\`\`python\ndef example(x):\n    return x * 2\n\nprint(example(5))  # 10\n\`\`\``;
+    }
+    if (lower.includes('react') || lower.includes('component')) {
+      return `\`\`\`jsx\nimport React from 'react';\nexport default function Example(){\n  return <div>Hello from ${model}</div>\n}\n\`\`\``;
+    }
+    if (lower.includes('html') || lower.includes('css')) {
+      return `\`\`\`html\n<div class="card">Hello from ${model}</div>\n\`\`\``;
+    }
+    return `I'm ${model} (demo). Tell me what you want: code, debugging help, or an explanation.`;
+  }
+
+  // ---------- Main send handler (robust) ----------
   async function sendMessage() {
-    const inputEl = document.getElementById('messageInput');
-    const message = (inputEl.value || '').trim();
-    if (!message || isLoading) return;
+    const input = document.getElementById('messageInput');
+    const text = (input.value || '').trim();
+    if (!text || isLoading) return;
 
-    addMessage('user', escapeHtml(message));
-    inputEl.value = '';
-
+    addMessage('user', escapeHtml(text));
+    input.value = '';
     isLoading = true;
+
     const sendBtn = document.getElementById('sendBtn');
     sendBtn.disabled = true;
     sendBtn.textContent = 'Thinking...';
@@ -456,29 +417,30 @@
     try {
       let aiText = '';
 
-      // Prefer Puter if initialized and has an ai.chat function
       if (puter && puter.ai && typeof puter.ai.chat === 'function') {
         setStatus('Using Puter.ai', 'linear-gradient(90deg,#10b981,#06b6d4)');
-        // Call whatever puter expects - try a typical shape; adjust based on actual puter API if differs
-        const puterResp = await puter.ai.chat({
-          model: currentModel,
-          messages: [{ role: 'user', content: message }]
-        });
-        // the structure may vary — try common places
-        if (puterResp?.result?.content) aiText = puterResp.result.content;
-        else if (puterResp?.content) aiText = puterResp.content;
-        else if (typeof puterResp === 'string') aiText = puterResp;
-        else aiText = JSON.stringify(puterResp);
+        // Call puter.ai.chat — SDKs vary, catch any shape
+        let puterResp;
+        try {
+          puterResp = await puter.ai.chat({
+            model: currentModel,
+            messages: [{ role: 'user', content: text }]
+          });
+        } catch (e) {
+          // Some puter builds expose a different call signature — try generic call
+          try { puterResp = await puter.chat({ model: currentModel, input: text }); } catch (e2) { puterResp = { error: safeStringify(e) }; }
+        }
+        aiText = extractTextFromResponse(puterResp);
+        if (!aiText || !String(aiText).trim()) aiText = safeStringify(puterResp, 3000);
       } else {
-        // If OpenAI key is present, use OpenAI
-        const openaiKey = (keyTextarea.value || localStorage.getItem(OPENAI_LOCALSTORAGE_KEY) || '').trim();
-        if (openaiKey) {
+        // OpenAI path if key present
+        const keyInBox = (document.getElementById('openaiKey').value || localStorage.getItem(OPENAI_STORAGE_KEY) || '').trim();
+        if (keyInBox) {
           setStatus('Using OpenAI key', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
-          aiText = await callOpenAI(message, currentModel);
+          aiText = await callOpenAI(text, currentModel);
         } else {
-          // last resort: simulated response
-          setStatus('Demo mode (simulated)', 'linear-gradient(90deg,#f97316,#fb923c)');
-          aiText = await simulateAIResponse(message, currentModel);
+          setStatus('Demo (simulated)', 'linear-gradient(90deg,#f97316,#fb923c)');
+          aiText = await simulateAIResponse(text, currentModel);
         }
       }
 
@@ -487,34 +449,84 @@
     } catch (err) {
       console.error('sendMessage error', err);
       removeMessage(loadingId);
-      addMessage('ai', 'Error: ' + (err.message || String(err)), true);
+      addMessage('ai', 'Error: ' + safeStringify(err, 2000), true);
       setStatus('Error — see console', 'linear-gradient(90deg,#ef4444,#f97316)');
     } finally {
       isLoading = false;
       sendBtn.disabled = false;
       sendBtn.textContent = 'Send 🚀';
-      inputEl.focus();
+      document.getElementById('messageInput').focus();
     }
   }
 
-  // ---------- Boot sequence ----------
-  window.addEventListener('load', async () => {
-    setStatus('Loading Puter...', 'rgba(255,255,255,0.08)');
-    await initPuter();              // try to load Puter
-    initializeModelSelection();     // wire up model buttons
-    const input = document.getElementById('messageInput');
-    if (input) input.focus();
-    // Load saved OpenAI key into box
-    loadSavedKeyToUI();
+  // ---------- Wire UI interactions ----------
+  function initializeModelButtons() {
+    document.querySelectorAll('.model-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('.model-option').forEach(o=>o.classList.remove('active'));
+        opt.classList.add('active');
+        currentModel = opt.dataset.model;
+        addMessage('ai', `Switched to ${opt.querySelector('.model-name')?.textContent || currentModel}. How can I help?`);
+      });
+    });
+  }
 
-    // Quick check: if Puter is available mark ready; else keep fallback status
-    if (puter) setStatus('Puter ready', 'linear-gradient(90deg,#10b981,#06b6d4)');
-    else {
-      const savedKey = localStorage.getItem(OPENAI_LOCALSTORAGE_KEY);
-      if (savedKey) setStatus('OpenAI key ready', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
-      else setStatus('Demo mode (no Puter, no OpenAI key)', 'linear-gradient(90deg,#f97316,#fb923c)');
+  // ---------- Key UI ----------
+  document.getElementById('saveKey').addEventListener('click', () => {
+    const v = document.getElementById('openaiKey').value.trim();
+    if (!v) { alert('Paste your OpenAI key before saving.'); return; }
+    localStorage.setItem(OPENAI_STORAGE_KEY, v);
+    alert('OpenAI key saved locally (browser localStorage). Recommended: use a server proxy in production.');
+    setStatus('OpenAI key saved', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
+  });
+  document.getElementById('clearKey').addEventListener('click', () => {
+    localStorage.removeItem(OPENAI_STORAGE_KEY);
+    document.getElementById('openaiKey').value = '';
+    setStatus('OpenAI key cleared', 'linear-gradient(90deg,#f97316,#fb923c)');
+  });
+  document.getElementById('pasteKey').addEventListener('click', async () => {
+    try {
+      const txt = await navigator.clipboard.readText();
+      document.getElementById('openaiKey').value = txt.trim();
+      setStatus('Pasted key', 'linear-gradient(90deg,#60a5fa,#06b6d4)');
+    } catch (e) {
+      alert('Clipboard access denied — paste manually.');
     }
   });
+
+  // ---------- Boot sequence ----------
+  window.addEventListener('load', async () => {
+    setStatus('Loading Puter...', 'rgba(255,255,255,.12)');
+    initializeModelButtons();
+    // load saved key to textarea
+    const saved = localStorage.getItem(OPENAI_STORAGE_KEY);
+    if (saved) document.getElementById('openaiKey').value = saved;
+
+    // Attempt to load Puter, but don't fail catastrophically if it's unavailable
+    const got = await tryInitPuter().catch(e => { console.warn('puter init error', e); return false; });
+    if (got && puter) {
+      setStatus('Puter ready', 'linear-gradient(90deg,#10b981,#06b6d4)');
+      console.log('Puter available:', puter);
+    } else {
+      // not available — show fallback state
+      if (localStorage.getItem(OPENAI_STORAGE_KEY) || document.getElementById('openaiKey').value.trim()) {
+        setStatus('No Puter — OpenAI key available', 'linear-gradient(90deg,#06b6d4,#60a5fa)');
+      } else {
+        setStatus('Demo mode (no Puter, no OpenAI key)', 'linear-gradient(90deg,#f97316,#fb923c)');
+      }
+      console.warn('Puter not available — falling back to OpenAI/demo');
+    }
+
+    // small UX: focus input
+    const input = document.getElementById('messageInput');
+    if (input) input.focus();
+  });
+
+  // expose sendMessage globally (so inline onclick works)
+  window.sendMessage = sendMessage;
+  window.handleKeyPress = handleKeyPress;
+  window.setPrompt = (p) => { document.getElementById('messageInput').value = p; document.getElementById('messageInput').focus(); };
+
   </script>
 </body>
 </html>
